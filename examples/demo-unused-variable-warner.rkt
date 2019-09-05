@@ -13,8 +13,8 @@
     (define used-variables (make-hasheqv))
     
     (define (mark-defined! idt phase)
-      (unless (and (eq? '_ (syntax-e idt))
-                   (syntax-original? (syntax-local-introduce idt)))
+      (unless (or (eq? '_ (syntax-e idt))
+                  (not (syntax-original? (syntax-local-introduce idt))))
         (unless (hash-ref defined-variables phase #f)
           (hash-set! defined-variables phase (mutable-free-id-set #:phase phase)))
         (free-id-set-add! (hash-ref defined-variables phase)
@@ -87,6 +87,10 @@
                                 (free-id-set->list vars))))
 
     (unless (null? unused-set)
+      ((error-display-handler)
+       "warning : unused variables"
+       (make-exn:fail:syntax "" (current-continuation-marks) unused-set))
+      #;
       (raise-syntax-error 'unused-variable-warner
                           "warning : unused variables"
                           #f
